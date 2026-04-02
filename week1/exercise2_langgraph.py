@@ -65,6 +65,7 @@ OUTPUTS_DIR.mkdir(exist_ok=True)
 
 # ─── Display helper ───────────────────────────────────────────────────────────
 
+
 def print_result(result: dict, label: str) -> None:
     """Print a research_agent result dict in a readable format."""
     print(f"\n{'=' * 65}")
@@ -95,6 +96,7 @@ def print_result(result: dict, label: str) -> None:
 # Notice: we do NOT tell the agent in which order to do these things.
 # The order emerges from the model's reasoning about what information it needs.
 # That is what makes it an agent rather than a script.
+
 
 def task_a() -> dict:
     print("\n--- Task A: Main Edinburgh Brief ---")
@@ -134,6 +136,7 @@ def task_a() -> dict:
 #   Find the generate_event_flyer function
 #   Follow the TODO comment — replace the stub with a real images.generate() call
 
+
 def task_b() -> dict:
     print("\n--- Task B: Flyer Tool ---")
     print("  If generate_event_flyer is still a stub, you'll see 'STUB' in the output.")
@@ -170,6 +173,7 @@ def task_b() -> dict:
 # Scenario 3: Completely out of scope
 #   There is no tool for train times. The agent should handle this cleanly.
 #   Question: Did it try to call a tool anyway? Did it make something up?
+
 
 def task_c() -> list:
     results = []
@@ -214,14 +218,19 @@ def task_c() -> list:
 # Compare what you see there with the Mermaid graph.
 # They both describe "what the agent can do" — but very differently.
 
+
 def task_d() -> str:
+    import os
+
     from langchain_openai import ChatOpenAI
     from langgraph.prebuilt import create_react_agent
+
     from sovereign_agent.tools.venue_tools import (
-        check_pub_availability, get_edinburgh_weather,
-        calculate_catering_cost, generate_event_flyer,
+        calculate_catering_cost,
+        check_pub_availability,
+        generate_event_flyer,
+        get_edinburgh_weather,
     )
-    import os
 
     llm = ChatOpenAI(
         base_url="https://api.tokenfactory.nebius.com/v1/",
@@ -229,10 +238,15 @@ def task_d() -> str:
         model="meta-llama/Llama-3.3-70B-Instruct",
         temperature=0,
     )
-    agent = create_react_agent(llm, [
-        check_pub_availability, get_edinburgh_weather,
-        calculate_catering_cost, generate_event_flyer,
-    ])
+    agent = create_react_agent(
+        llm,
+        [
+            check_pub_availability,
+            get_edinburgh_weather,
+            calculate_catering_cost,
+            generate_event_flyer,
+        ],
+    )
 
     print(f"\n{'=' * 65}")
     print("  TASK D — Agent Graph Structure (Mermaid)")
@@ -251,6 +265,7 @@ def task_d() -> str:
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
+
 
 def main(which: str = "all") -> None:
     output = {}
@@ -275,9 +290,10 @@ def main(which: str = "all") -> None:
 
 
 if __name__ == "__main__":
-    valid = {"all", "task_a", "task_b", "task_c", "task_d"}
-    which = sys.argv[1] if len(sys.argv) > 1 else "all"
-    if which not in valid:
-        print(f"Unknown task '{which}'. Options: {sorted(valid)}")
-        sys.exit(1)
-    main(which)
+    # valid = {"all", "task_a", "task_b", "task_c", "task_d"}
+    # which = sys.argv[1] if len(sys.argv) > 1 else "all"
+    # if which not in valid:
+    #     print(f"Unknown task '{which}'. Options: {sorted(valid)}")
+    #     sys.exit(1)
+    # main(which)
+    task_a()
