@@ -79,8 +79,8 @@ def print_result(result: dict, label: str) -> None:
             print(f"  [TOOL_CALL] → {entry['tool']}({args_str})")
         else:
             content = entry.get("content", "")
-            if len(content) > 500:
-                content = content[:500] + "..."
+            # if len(content) > 500:
+            #     content = content[:500] + "..."
             if content:
                 print(f"  [{role}]\n  {content}\n")
 
@@ -115,7 +115,9 @@ def task_a() -> dict:
     print_result(result, "TASK A — Main Edinburgh Brief")
 
     if not result["tool_calls_made"]:
-        print("  ⚠️  No tool calls were made. Check that sovereign_agent/ is importable.")
+        print(
+            "  ⚠️  No tool calls were made. Check that sovereign_agent/ is importable."
+        )
     else:
         print(f"\n  Summary: {len(result['tool_calls_made'])} tool call(s) made")
         for tc in result["tool_calls_made"]:
@@ -222,8 +224,8 @@ def task_c() -> list:
 def task_d() -> str:
     import os
 
+    from langchain.agents import create_agent
     from langchain_openai import ChatOpenAI
-    from langgraph.prebuilt import create_react_agent
 
     from sovereign_agent.tools.venue_tools import (
         calculate_catering_cost,
@@ -238,7 +240,7 @@ def task_d() -> str:
         model="meta-llama/Llama-3.3-70B-Instruct",
         temperature=0,
     )
-    agent = create_react_agent(
+    agent = create_agent(
         llm,
         [
             check_pub_availability,
@@ -259,8 +261,12 @@ def task_d() -> str:
     print("  Both files describe the agent's behaviour — compare them.")
     print()
     print("  LangGraph: one loop node, model decides the path at runtime")
-    print("  Rasa CALM: flows.yml — every task described explicitly, LLM picks the flow")
-    print("  Record your comparison in week1/answers/ex2_answers.py → TASK_D_COMPARISON")
+    print(
+        "  Rasa CALM: flows.yml — every task described explicitly, LLM picks the flow"
+    )
+    print(
+        "  Record your comparison in week1/answers/ex2_answers.py → TASK_D_COMPARISON"
+    )
     return mermaid
 
 
@@ -290,10 +296,10 @@ def main(which: str = "all") -> None:
 
 
 if __name__ == "__main__":
-    # valid = {"all", "task_a", "task_b", "task_c", "task_d"}
-    # which = sys.argv[1] if len(sys.argv) > 1 else "all"
-    # if which not in valid:
-    #     print(f"Unknown task '{which}'. Options: {sorted(valid)}")
-    #     sys.exit(1)
-    # main(which)
-    task_a()
+    valid = {"all", "task_a", "task_b", "task_c", "task_d"}
+    which = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if which not in valid:
+        print(f"Unknown task '{which}'. Options: {sorted(valid)}")
+        sys.exit(1)
+    main(which)
+    # task_a()

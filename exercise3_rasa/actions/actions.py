@@ -60,9 +60,9 @@ from rasa_sdk.executor import CollectingDispatcher
 # Change them here; they take effect on the next restart.
 # The LLM cannot talk its way around these — the Python check always runs.
 
-MAX_GUESTS      = 170    # venue hard capacity ceiling
-MAX_DEPOSIT_GBP = 300    # Rod's maximum authorised deposit
-MAX_VEGAN_RATIO = 0.80   # flag if more than 80% of guests need vegan meals
+MAX_GUESTS = 170  # venue hard capacity ceiling
+MAX_DEPOSIT_GBP = 300  # Rod's maximum authorised deposit
+MAX_VEGAN_RATIO = 0.80  # flag if more than 80% of guests need vegan meals
 
 
 class ActionValidateBooking(Action):
@@ -95,8 +95,8 @@ class ActionValidateBooking(Action):
 
         # In CALM, from_llm slots are already the right type (float).
         # No parsing needed — the LLM did that work.
-        guests  = float(tracker.get_slot("guest_count")       or 0)
-        vegans  = float(tracker.get_slot("vegan_count")       or 0)
+        guests = float(tracker.get_slot("guest_count") or 0)
+        vegans = float(tracker.get_slot("vegan_count") or 0)
         deposit = float(tracker.get_slot("deposit_amount_gbp") or 0)
 
         def escalate(reason: str) -> List[Dict]:
@@ -115,12 +115,12 @@ class ActionValidateBooking(Action):
         # ── TASK B: Cutoff Guard ──────────────────────────────────────────────
         # Uncomment these four lines to add the time-based escalation guard.
         #
-        # now = datetime.datetime.now()
-        # if now.hour > 16 or (now.hour == 16 and now.minute >= 45):
-        #     return escalate(
-        #         "it is past 16:45 — insufficient time to process the confirmation"
-        #         " before the 5 PM deadline"
-        #     )
+        now = datetime.datetime.now()
+        if now.hour > 16 or (now.hour == 16 and now.minute >= 45):
+            return escalate(
+                "it is past 16:45 — insufficient time to process the confirmation"
+                " before the 5 PM deadline"
+            )
 
         # ── Guard 1: Venue capacity ───────────────────────────────────────────
         if guests > MAX_GUESTS:

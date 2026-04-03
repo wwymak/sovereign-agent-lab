@@ -42,10 +42,18 @@ Conversation 3 (out of scope):
 # ── Conversation 1: Happy path ─────────────────────────────────────────────
 
 CONVERSATION_1_TRACE = """
-PASTE YOUR rasa shell TERMINAL OUTPUT HERE
+Your input ->  calling to confirm a booking
+How many guests are you confirming for tonight's event?
+Your input ->  160
+And how many of those guests will need vegan meals?
+Your input ->  50
+What deposit amount in GBP are you proposing to secure the booking?
+Your input ->  200
+Thank you — booking confirmed. 160 guests, 50 requiring vegan meals, £200 deposit accepted. I'll send written confirmation to the organiser shortly.
+Is there anything else I can help you with?
 """
 
-CONVERSATION_1_OUTCOME = "FILL_ME_IN"   # "confirmed" or "escalated"
+CONVERSATION_1_OUTCOME = "confirmed"  # "confirmed" or "escalated"
 
 # ── Conversation 2: Deposit too high ───────────────────────────────────────
 
@@ -53,13 +61,26 @@ CONVERSATION_2_TRACE = """
 PASTE YOUR rasa shell TERMINAL OUTPUT HERE
 """
 
-CONVERSATION_2_OUTCOME = "FILL_ME_IN"   # "confirmed" or "escalated"
-CONVERSATION_2_REASON  = "FILL_ME_IN"   # the reason the agent gave for escalating
+CONVERSATION_2_OUTCOME = "FILL_ME_IN"  # "confirmed" or "escalated"
+CONVERSATION_2_REASON = "FILL_ME_IN"  # the reason the agent gave for escalating
 
 # ── Conversation 3: Out of scope ───────────────────────────────────────────
 
 CONVERSATION_3_TRACE = """
-PASTE YOUR rasa shell TERMINAL OUTPUT HERE
+Your input ->  200
+Thank you — booking confirmed. 160 guests, 50 requiring vegan meals, £200 deposit accepted. I'll send written confirmation to the organiser shortly.
+Is there anything else I can help you with?
+Your input ->  yes, can you organise a sound system for the evening
+I'm sorry, I'm not trained to help with that.
+I can only help with confirming tonight's venue booking. For anything else, please contact the event organiser directly.
+Is there anything else I can help you with?
+Your input ->  what is the contact details for event organiser
+I am afraid, I don't know the answer. At this point, I don't have access to a knowledge base.
+Would you like to continue with handle out of scope?
+Your input ->  what is 'handle out of scope'
+I'm sorry, I'm not trained to help with that.
+I am afraid, I don't know the answer. At this point, I don't have access to a knowledge base.
+Would you like to continue with handle out of scope?
 """
 
 # Describe what CALM did after the out-of-scope message. Min 20 words.
@@ -75,7 +96,7 @@ FILL ME IN
 
 # ── Task B: Cutoff guard ───────────────────────────────────────────────────
 
-TASK_B_DONE = None   # True or False
+TASK_B_DONE = None  # True or False
 
 # List every file you changed.
 TASK_B_FILES_CHANGED = []
@@ -120,10 +141,30 @@ Think about:
 # Min 40 words.
 
 SETUP_COST_VALUE = """
-FILL ME IN
+The specifics of Rasa CALM  is that it buys you certainty. The rules you define
+must be followed, the fields you want extracted are extracted from
+ natural conversation but nothing else,
+ and you don't need to worry about random llm choices leading
+to potentially expensive errors.
 
-Be specific. What can the Rasa CALM agent NOT do that LangGraph could?
-Is that a feature or a limitation for the confirmation use case?
-Think about: can the CALM agent improvise a response it wasn't trained on?
-Can it call a tool that wasn't defined in flows.yml?
+Rasa CALM agent has to follow the rules laid down by the configs yml precisely. For
+example, it cannot halluncinate any tools, or to use any default tools the come with
+the llm (eg llama3.3 has internal browser tool and wolfram alpha. It cannot enage in
+'random conversation' with users -- it's response is very scripted. For this confirmation
+use case, it is acceptable -- the business use case needs to make sure the total number of
+people, the number of vegans and the deposit are captured, nothing else. It does not need
+to handle  ambigous requests (e.g. 'a pub with scottish vibes and within 10 mins walk
+from the train station)
+
+However, I would suggest the current implementation will work better as a 'backend'
+in some sort of A2A setup so a human never have to deal with this sort of robotic
+responses...
+
+If we look at the 'out of scope' message trace above-- the agent asks 'is there anything
+else I can help you with' with it very much can't help with most things, not
+even provide info on relevant contact details.
+'Would you like to continue with handle out of scope?' which is also very odd phrasing
+(almost like some 'backend' logic is leaking out)
+If it's for a human user it can get frustrating to use (or rather, why can't I just go
+fill a form that takes 10s rather than interact with a bot?)
 """

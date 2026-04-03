@@ -47,8 +47,8 @@ The agent picks up the new capability automatically — no other changes needed.
 import os
 
 from dotenv import load_dotenv
+from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
 
 # Import tools from the shared tool layer
 # This import path is why the project structure matters —
@@ -87,7 +87,7 @@ TOOLS = [
 
 # Build the agent once at module load time.
 # Rebuilding it on every call would be wasteful.
-_agent = create_react_agent(llm, TOOLS)
+_agent = create_agent(llm, TOOLS)
 
 
 # ─── Public interface ─────────────────────────────────────────────────────────
