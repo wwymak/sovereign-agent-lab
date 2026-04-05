@@ -151,10 +151,11 @@ Rasa CALM agent has to follow the rules laid down by the configs yml precisely. 
 example, it cannot halluncinate any tools, or to use any default tools the come with
 the llm (eg llama3.3 has internal browser tool and wolfram alpha. It cannot enage in
 'random conversation' with users -- it's response is very scripted. For this confirmation
-use case, it is acceptable -- the business use case needs to make sure the total number of
+use case, it is acceptable -- the business use case is very clear and simple--
+it needs to make sure the total number of
 people, the number of vegans and the deposit are captured, nothing else. It does not need
-to handle  ambigous requests (e.g. 'a pub with scottish vibes and within 10 mins walk
-from the train station)
+to handle open ended requests like e.g. 'find me a pub with scottish vibes and within 10 mins walk
+from the train station'
 
 However, I would suggest the current implementation will work better as a 'backend'
 in some sort of A2A setup so a human never have to deal with this sort of robotic
