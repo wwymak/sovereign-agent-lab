@@ -296,10 +296,10 @@ def main(which: str = "all") -> None:
 
 
 if __name__ == "__main__":
-    # valid = {"all", "task_a", "task_b", "task_c", "task_d"}
-    # which = sys.argv[1] if len(sys.argv) > 1 else "all"
-    # if which not in valid:
-    #     print(f"Unknown task '{which}'. Options: {sorted(valid)}")
-    #     sys.exit(1)
-    # main(which)
-    task_a()
+    valid = {"all", "task_a", "task_b", "task_c", "task_d"}
+    which = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if which not in valid:
+        print(f"Unknown task '{which}'. Options: {sorted(valid)}")
+        sys.exit(1)
+    main(which)
+    # task_a()

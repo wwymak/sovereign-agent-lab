@@ -27,11 +27,18 @@ TASK_A_CONFIRMED_VENUE = "The Albanach"
 TASK_A_CATERING_COST_GBP = 5600.0
 
 # Did the weather tool return outdoor_ok = True or False?
-TASK_A_OUTDOOR_OK = False
+TASK_A_OUTDOOR_OK = True
 
 TASK_A_NOTES = (
-    "Using Llama 70B for this task DID NOT work, it outputs the tool use as"
-    " a 'function' field , whereas eg qwen produces the standard output"
+    "Using Llama 70B for this task DID NOT work, the langgraph lib wasn't able to parse the output format correctly."
+    "If we inspect the raw output, the model did attempt tool calls via 'function' fields , but it wasn't in a"
+    "format that was parsed correctly by the token factory inference engine "
+    "swapping to Qwen32B works and gives correct outputs."
+    "It is also interesting to inspect the thinking traces of the model, and how well it automatically uses the "
+    "available tools without having to specify this in the prompt."
+    "In terms of the flyer generated in task a, with the model specify the prompt:"
+    "https://pictures-storage.storage.eu-north1.nebius.cloud/text2img-4ce8728b-942d-4e1d-95ca-20cf2b78166a_00001_.webp"
+    "it is actually much better than the flyer I tried to generate with the manual prompt below(!)"
 )  # optional — anything unexpected
 
 # ── Task B ─────────────────────────────────────────────────────────────────
@@ -40,7 +47,7 @@ TASK_A_NOTES = (
 TASK_B_IMPLEMENTED = True  # True or False
 
 # The image URL returned (or the error message if still a stub).
-TASK_B_IMAGE_URL_OR_ERROR = "https://pictures-storage.storage.eu-north1.nebius.cloud/text2img-30da49ca-6aee-42fe-a017-aa7d06f69c3c_00001_.webp"
+TASK_B_IMAGE_URL_OR_ERROR = "https://pictures-storage.storage.eu-north1.nebius.cloud/text2img-bbfee49f-514d-4e1b-9430-b2a725ea9250_00001_.webp"
 
 # The prompt sent to the image model. Copy from terminal output.
 TASK_B_PROMPT_USED = (
@@ -56,15 +63,15 @@ TASK_B_PROMPT_USED = (
 # Quote the specific message where the agent changed course. Min 20 words.
 SCENARIO_1_PIVOT_MOMENT = """
 <think>
-Okay, let's see. The user wanted to check The Bow Bar for 160 vegan guests. The response from the tool says that The Bow Bar has a capacity of 80, which is less than the required 160. So it doesn't meet the capacity constraint. The vegan option is available, but since the capacity is insufficient, the overall status is "full" and meets_all_constraints is false.
+Okay, so the user wanted to check The Bow Bar for 160 vegan guests. The response from the tool says that The Bow Bar has a capacity of 80, which is less than the required 160. That means it doesn't meet the capacity requirement. The vegan option is available, but since the capacity isn't enough, the overall status is "full" and meets_all_constraints is false.
 
-Now, the user's instruction was to check The Bow Bar first, and if it doesn't meet the requirements, check any other available venue. So I need to move on to the next venues. The known venues are The Albanach, The Haymarket Vaults, The Guilford Arms, and The Bow Bar. Since The Bow Bar is already checked, the next ones to check would be the others in the list.
+Now, the user's instruction was to check The Bow Bar first, and if it doesn't work, check any other available venue. So I need to move on to the next venue. The known venues are The Albanach, The Haymarket Vaults, The Guilford Arms, and The Bow Bar. Since The Bow Bar is already checked, the next options are the other three.
 
-I should start with The Albanach. Let me call the check_pub_availability function again with the same parameters: required_capacity 160 and requires_vegan true. If The Albanach meets the capacity and vegan requirements, then that's the venue. If not, proceed to The Haymarket Vaults, then The Guilford Arms. If none of them meet the requirements, then inform the user that no suitable venue is available.
+I should check each one in order. Let's start with The Albanach. I'll use the same function again with the same parameters: required_capacity 160 and requires_vegan true. If The Albanach meets the requirements, then we're done. If not, proceed to The Haymarket Vaults, then The Guilford Arms.
 
-Wait, but the user said "any other available venue" if The Bow Bar doesn't work. So I need to check each of the other venues one by one. Let's start with The Albanach. If that's not possible, then The Haymarket Vaults, then The Guilford Arms. Each time, using the same function call with the same capacity and vegan requirement.
+Wait, the tool response for The Bow Bar mentioned "status": "full". Does that mean it's at capacity but vegan is available? But the capacity is 80, which is less than 160, so even if vegan is available, the capacity isn't met. So the next step is definitely to check another venue.
 
-So the next step is to check The Albanach. Let's make the tool call for that.
+So the next tool call should be check_pub_availability for The Albanach. Let's see if that works. If not, then The Haymarket Vaults, and so on. The user wants the first available venue that meets both capacity and dietary needs. So I need to iterate through each venue until one returns meets_all_constraints as true.
 </think>
 
 
@@ -82,12 +89,24 @@ SCENARIO_2_HALLUCINATED = False  # True or False
 # Paste the final [AI] message.
 SCENARIO_2_FINAL_ANSWER = """
 <think>
-Okay, let's see. The user is looking for a venue in Edinburgh that can accommodate 300 people with vegan options. They provided a list of four pubs: The Albanach, The Haymarket Vaults, The Guilford Arms, and The Bow Bar. I checked each one using the check_pub_availability function.
+Okay, let's see. The user is looking for a venue in Edinburgh that can accommodate 300 people with vegan options.
+I've checked all four known pubs: The Albanach, The Haymarket Vaults, The Guilford Arms, and The Bow Bar.
 
-First, The Albanach had a capacity of 180 and vegan options, but that's under 300. Then The Haymarket Vaults with 160, also vegan but too small. The Guilford Arms had 200 capacity but no vegan options. Finally, The Bow Bar has 80 capacity and vegan, but it's full. None of them meet both the capacity and vegan requirements. So I need to inform the user that none of the available pubs can handle their request. Maybe suggest looking for larger venues or other options outside the known list.
+The first two, Albanach and Haymarket Vaults, have vegan options but their capacities are 180 and 160 respectively,
+ which are below 300. The Guilford Arms has a capacity of 200 but doesn't offer vegan options.
+ The Bow Bar has vegan options but only a capacity of 80 and is already full.
+
+None of the venues meet both the capacity and vegan requirements. The user might need to consider alternative solutions
+ like booking multiple venues, looking for other pubs outside the known list, or adjusting the event size.
+ Since the tools provided don't include a function to search beyond the known venues,
+ I should inform the user that the current options don't work and suggest possible next steps.
 </think>
 
-None of the known Edinburgh venues can accommodate 300 guests with vegan options. The largest available space (The Guilford Arms) only holds 200 people but lacks vegan options, while venues with vegan options (The Albanach, Haymarket Vaults, Bow Bar) have capacities of 180, 160, and 80 respectively. You'll need to consider alternative venues outside this list or adjust your requirements.
+None of the known Edinburgh venues can accommodate 300 guests with vegan options.
+The closest options have either insufficient capacity or lack vegan provisions. Would you like me to:
+1. Suggest alternative venues outside our known list?
+2. Calculate costs for combining multiple venues?
+3. Adjust the guest count or dietary requirements?
 """
 
 # Scenario 3: out of scope (train times)
@@ -95,7 +114,8 @@ None of the known Edinburgh venues can accommodate 300 guests with vegan options
 SCENARIO_3_TRIED_A_TOOL = False  # True or False
 
 SCENARIO_3_RESPONSE = """
-I don't have access to real-time train schedules or transportation data. For the most accurate information about the last train from Edinburgh Waverley to London, I recommend checking:
+I don't have access to real-time train schedules or transportation data.
+For the most accurate information about the last train from Edinburgh Waverley to London, I recommend checking:
 1. The National Rail website (https://www.nationalrail.co.uk)
 2. Train service apps like Citymapper or Trainline
 3. The specific train operator's website (e.g., LNER)
@@ -123,7 +143,23 @@ favourite travel app)
 
 # Paste the Mermaid output from `python exercise2_langgraph.py task_d` here.
 TASK_D_MERMAID_OUTPUT = """
-PASTE MERMAID OUTPUT HERE
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	model(model)
+	tools(tools)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> model;
+	model -.-> __end__;
+	model -.-> tools;
+	tools -.-> model;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
 """
 
 # Compare the LangGraph graph to exercise3_rasa/data/rules.yml. Min 30 words.
@@ -137,5 +173,16 @@ FILL ME IN
 # Must reference a specific behaviour from your run.
 
 MOST_SURPRISING = """
-FILL ME IN
+Make assumptions about the quiet corner for webniar requirement in task 1. I was expecting the agent to
+miss/ignore it due to the limitations of the tools. However, it was acknowledged partway through when looking through
+thinking trace (occurs after the price calculation tool use):
+
+Wait, the user also mentioned a quiet corner for a 30-minute webinar. The initial check_pub_availability might not have
+considered that. But the function's parameters don't include that, so maybe it's assumed that the pub's availability
+includes space for such activities.
+Or maybe the user just wants to note that as part of the requirements, but the tool doesn't handle it.
+So we can proceed with the given functions.
+
+what is not so ideal is that the agent didn't feed this back to the user -- in a real production scenario the quiet
+corner is likely an important constraint
 """

@@ -69,8 +69,8 @@ load_dotenv()
 llm = ChatOpenAI(
     base_url="https://api.tokenfactory.nebius.com/v1/",
     api_key=os.getenv("NEBIUS_KEY"),
-    model="meta-llama/Llama-3.3-70B-Instruct-fast",
-    # model="Qwen/Qwen3-32B",
+    # model="meta-llama/Llama-3.3-70B-Instruct-fast",
+    model="Qwen/Qwen3-32B",
     temperature=0,
 )
 
