@@ -96,5 +96,11 @@ returning the first answer that fits the requirements (the Albanach). For the sm
 # "Context formatting matters most when..."
 
 CORE_LESSON = """
-FILL ME IN
+Context formatting matters most when the signal-to-noise ratio is low (e.g., long contexts, near-miss distractors)
+AND you are using a sufficiently capable model that can use structural cues to trigger logical/reasoning processing.
+
+Counter to intuition, structural cues such as tags are more useful for larger models, which 'shifts' into a more
+analytical mode and is more rigorous in the extraction task. Smaller Models needs behavioral (eg chain of thought, very
+precise todo list ) and positional formatting (eg putting the question at the end so they don't
+forget the constraint.)
 """
