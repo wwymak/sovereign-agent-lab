@@ -118,11 +118,13 @@ sure it doesn't give outdated or false info
 TASK_B_DONE = True  # True or False
 
 # List every file you changed.
-TASK_B_FILES_CHANGED = []
+TASK_B_FILES_CHANGED = ["sovereign-agent-lab/exercise3_rasa/actions/actions.py"]
 
 # How did you test that it works? Min 20 words.
 TASK_B_HOW_YOU_TESTED = """
-FILL ME IN
+I tried running the confirmation using same inputs both before 16.45 and after 16.45 .
+Before 16.45 the booking is confirmed. After 16.45 the Rasa agent told me it has to
+escalate
 """
 
 # ── CALM vs Old Rasa ───────────────────────────────────────────────────────

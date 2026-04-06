@@ -164,7 +164,18 @@ graph TD;
 
 # Compare the LangGraph graph to exercise3_rasa/data/rules.yml. Min 30 words.
 TASK_D_COMPARISON = """
-FILL ME IN
+The LangGraph graph has only one loop node with tools. We allow the model
+to pick what tool to call at every loop and when it decide to end. We also
+don't have any  scripted phrasings, we allow the model to generate an
+answer for the user either based on the outputs of a tool call or on the context.
+
+Rasa CALM rules are completely different. While we still allow the llm to
+decide which flow to take (we can equate this to tool use in a way), once
+the conversation has gone down a certain flow it has to go one way e.g.
+number of vegans must follow number of guests.
+
+In addition, the llm _has_ to pick one of the available Rasa flows, it cannot
+decide to skip a tool call, or to use more than 1 at a time.
 """
 
 # ── Reflection ─────────────────────────────────────────────────────────────
