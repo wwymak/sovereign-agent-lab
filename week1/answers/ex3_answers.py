@@ -58,40 +58,57 @@ CONVERSATION_1_OUTCOME = "confirmed"  # "confirmed" or "escalated"
 # ── Conversation 2: Deposit too high ───────────────────────────────────────
 
 CONVERSATION_2_TRACE = """
-PASTE YOUR rasa shell TERMINAL OUTPUT HERE
+What deposit amount in GBP are you proposing to secure the booking?
+Your input ->  500
+I need to check one thing with the organiser before I can confirm.
+The issue is: it is past 16:45 — insufficient time to process the confirmation before the 5 PM deadline.
+Can I call you back within 15 minutes?
+Is there anything else I can help you with?
 """
 
-CONVERSATION_2_OUTCOME = "FILL_ME_IN"  # "confirmed" or "escalated"
-CONVERSATION_2_REASON = "FILL_ME_IN"  # the reason the agent gave for escalating
+CONVERSATION_2_OUTCOME = "escalated"  # "confirmed" or "escalated"
+CONVERSATION_2_REASON = "insufficient time to process the confirmation before the 5 PM deadline. "  # the reason the agent gave for escalating
 
 # ── Conversation 3: Out of scope ───────────────────────────────────────────
 
 CONVERSATION_3_TRACE = """
-Your input ->  200
-Thank you — booking confirmed. 160 guests, 50 requiring vegan meals, £200 deposit accepted. I'll send written confirmation to the organiser shortly.
-Is there anything else I can help you with?
-Your input ->  yes, can you organise a sound system for the evening
+And how many of those guests will need vegan meals?
+Your input ->  before I answer that, do you have av equipment available for hire
+I am afraid, I don't know the answer. At this point, I don't have access to a knowledge base.
+Would you like to resume confirm booking and handle out of scope?
+Your input ->  who can I ask about the av equipment
 I'm sorry, I'm not trained to help with that.
+I am afraid, I don't know the answer. At this point, I don't have access to a knowledge base.
+Would you like to resume confirm booking and handle out of scope?
+Your input ->  yes
+And how many of those guests will need vegan meals?
+Your input ->  90
 I can only help with confirming tonight's venue booking. For anything else, please contact the event organiser directly.
+Would you like to continue with confirm booking?
+Your input ->  I am confirming the booking
+Ok, I am updating guest_count, vegan_count to 160, 90 respectively.
+What deposit amount in GBP are you proposing to secure the booking?
+Your input ->  250
+I need to check one thing with the organiser before I can confirm. The issue is: it is past 16:45 —
+insufficient time to process the confirmation before the 5 PM deadline. Can I call you back within 15 minutes?
 Is there anything else I can help you with?
-Your input ->  what is the contact details for event organiser
-I am afraid, I don't know the answer. At this point, I don't have access to a knowledge base.
-Would you like to continue with handle out of scope?
-Your input ->  what is 'handle out of scope'
-I'm sorry, I'm not trained to help with that.
-I am afraid, I don't know the answer. At this point, I don't have access to a knowledge base.
-Would you like to continue with handle out of scope?
 """
 
 # Describe what CALM did after the out-of-scope message. Min 20 words.
 CONVERSATION_3_WHAT_HAPPENED = """
-FILL ME IN
+It explains that it is unable to help with the out of scope request and ask me to contact event organiser.
+This follows the exact response we specified in domain.yml
+Then it asks if I want to resume the confirmation
 """
 
 # Compare Rasa CALM's handling of the out-of-scope request to what
 # LangGraph did in Exercise 2 Scenario 3. Min 40 words.
 OUT_OF_SCOPE_COMPARISON = """
-FILL ME IN
+In Rasa, it can only state that it is unable to help the user with the request using our
+supplied script, and will keep repeating the same script we supplied until the user reverts to one
+of the allowed actions. In LangGraph, the agent also told the user that it is unable to
+help with the request, however, it is able to suggest alternatives that the user can try themselves
+based on the internal knowledge from the llm
 """
 
 # ── Task B: Cutoff guard ───────────────────────────────────────────────────
