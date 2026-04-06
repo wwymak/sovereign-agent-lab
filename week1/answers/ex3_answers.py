@@ -108,12 +108,14 @@ In Rasa, it can only state that it is unable to help the user with the request u
 supplied script, and will keep repeating the same script we supplied until the user reverts to one
 of the allowed actions. In LangGraph, the agent also told the user that it is unable to
 help with the request, however, it is able to suggest alternatives that the user can try themselves
-based on the internal knowledge from the llm
+based on the internal knowledge from the llm (eg search online). However, we have to be
+quite careful about evaluating the langgraph agent in this scenario -- eg how do we make
+sure it doesn't give outdated or false info
 """
 
 # ── Task B: Cutoff guard ───────────────────────────────────────────────────
 
-TASK_B_DONE = None  # True or False
+TASK_B_DONE = True  # True or False
 
 # List every file you changed.
 TASK_B_FILES_CHANGED = []
@@ -139,12 +141,40 @@ FILL ME IN
 # Min 30 words.
 
 CALM_VS_OLD_RASA = """
-FILL ME IN
+What does the LLM handle now that Python handled before?
+- Dialogue State Management: Before, if a user deviated from a form, we had to write
+complex Python logic (ActionExecutionRejection, custom fallback actions) or
+exhaustive rules.yml to handle the digression and bring them back.
+Now, the LLM natively handles digressions, chitchat, and context switching without explicit code.
+- Complex Data Extraction: Before, we had to use Python FormValidationAction classes to
+clean up fuzzy inputs (e.g., writing Python regex to turn "I guess around 160 people"
+into the float 160.0). Now, the LLM uses from_llm mappings to
+logically deduce and format the value automatically.
 
-Think about:
-- What does the LLM handle now that Python handled before?
-- What does Python STILL handle, and why (hint: business rules)?
-- Is there anything you trusted more in the old approach?
+Python is still required to handle the exact logic, constraints, and business rules,
+and interacting with any required backend systems.
+- querying the backend to confirm booking.
+- Strict Business Constraints: While the LLM extracts the number 160, the Python
+    ActionValidateBooking enforces the business rule that if it doesn't match the
+    booking numbers it ask you for reconfirmation or escalation to human.
+    We rely on Python for this because business rules must be deterministic and
+    mathematically precise, not probabilistic.
+
+Is there anything you trusted more in the old approach?
+- In the old approach, if we wrote a rule in rules.yml, it executed exactly that way 100% of
+the time. With CALM, because an LLM is probabilistic, there is a tiny risk that an unusual
+user prompt might cause the LLM to trigger the wrong flow or get confused.
+- the old method use regex/exact string matching, and for cases where you know the format precisely
+eg order ids, the old method is guaranteed correctness. With the new LLM extraction
+they can occasionally suffer from "hallucinations" or minor typos when extracting complex,
+nonsensical alphanumeric strings.
+- Transparent Debugging and Fixing:
+In old Rasa, if the bot made a mistake, it was easy to debug. You checked the intent confidence score.
+If confirm_booking scored 0.42 instead of 0.90, you knew exactly how to fix it:
+add 10 more training examples to nlu.yml. With CALM, if the LLM fails to trigger a flow,
+debugging is a bit of a "black box." You have to tweak the prompt/flow description
+and hope the LLM interprets it better next time.
+
 """
 
 # ── The setup cost ─────────────────────────────────────────────────────────
