@@ -67,9 +67,9 @@ uses these tools, they will need to repeat the same tool definition code
 # naming a component and explaining why that component does that job.
 
 WEEK_5_ARCHITECTURE = """
-- FILL ME IN
-- FILL ME IN
-- FILL ME IN
+- mcp server with tools
+- LLM(s)
+- memory
 - FILL ME IN
 - FILL ME IN
 """
@@ -79,5 +79,19 @@ WEEK_5_ARCHITECTURE = """
 # Must reference specific things you observed in your runs. Min 60 words.
 
 GUIDING_QUESTION_ANSWER = """
-FILL ME IN
+I will use the langgraph agent for research and the Rasa CALM agent for the call.
+It is not possible to use the Rasa CALM for research -- research is an open ended task
+and it is very difficult to anticipate all the possible paths a user might go down.
+We can see how when CALM ends up in an 'unanticated' path it keeps repeating the same sentence
+until it can go to another defined path, this is likely to frustrate the user and
+also doesn't do it's purpose as a research agent. The Langgraph agent, with it's more
+modular tools and more flexible llm can help guide the user to a valid choice eg
+in ex2 when user wants to find somewhere for 300 people and none of the venus fit the
+agent was able to suggest alternatives e.g. 'Calculate costs for combining multiple venues?'
+
+On the other hand, the call needs to be very definitive -- only 3 values must be entered. Probably
+to some booking system which we don't want to get wrong values in. If we use the flexible
+Langgraph agent we have higher chance that some wrong/halluncinated value will creep in. Also,
+since this is a straightforward task, by using CALM we can offload some of the work from the
+bigger llm and save some costs.
 """
