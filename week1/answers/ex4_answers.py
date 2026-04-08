@@ -67,11 +67,36 @@ uses these tools, they will need to repeat the same tool definition code
 # naming a component and explaining why that component does that job.
 
 WEEK_5_ARCHITECTURE = """
-- mcp server with tools
-- LLM(s)
-- memory
-- FILL ME IN
-- FILL ME IN
+- infra to host the langgraph agent -- this will include eg ECS for running the agent,
+  databases to hold langgraph checkpoints, secrets for any required keys etc
+- LLM(s) for routing and reasoning. For the reasoning LLM, we will use
+  a more capable model such as Kimi-K2-thinking for the brain for the Planner and Agent Loops.
+  For faster simple tasks such as plan execution, we can use a smaller model such as Qwen32B
+- Short/long term memory: short term memeroy holds the 'scratchpad' of the current task
+  (e.g., the contents of the file being read right now). This is cleared when the task is
+  done to save context window tokens. Long-term (Semantic) Memory such as
+  vector database holds things like user preferences and info that has to persist across sessions
+- Planning: Before executing, the agent receives the task and writes a Plan.
+  It breaks a complex request ("Analyze this new CSV and tell me the sales trend")
+  into a series of sub-tasks. This plan is saved and the following implementations follow the plan.
+   This makes the execution more robust since you can also implement plan review where any potential
+   issues are caught before anything is implemented. It also allows you to use a cheaper model for
+   implementation
+- agent (ReAct) loops. This is where the tasks made by the planner gets executed.
+  The agent looks at the current step in the Plan, decides which tool to use,
+   waits for the result, and evaluates if the step is complete. If a tool fails, the
+   loop contains the logic to read the error and try a different approach.
+- mcp server with tools: Instead of hardcoding Python functions directly into the agent, the agent
+   communicates with standalone MCP servers.This gives us separation of concerns.
+   If a tool needs to be updated, you update the MCP server without touching the core agent code.
+   It also allows you to run dangerous tools (like Python execution) in isolated Docker containers.
+- Guardrails: input guardrails checks incoming messages for Prompt Injection attacks before the LLM
+  sees them and (triggers malicious agent behaviour). Output guardrails such as structured
+  outputs make sure the agent doesn't crash on malformed tool calls etc and that it can run
+  autonomously without crashing
+- Observability: LLM/agent via eg Langfuse, tracks token usage, costs, agent execution so we can
+  monitor for bugs, improve prompts etc. System observability eg through cloudwatch/kibana etc
+  so we can track /be alerted if the agent goes down
 """
 
 # ── The guiding question ───────────────────────────────────────────────────
