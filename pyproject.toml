@@ -16,6 +16,7 @@ dependencies = [
     "langchain-core>=0.2.0",
     # MCP — Model Context Protocol, used in Exercise 4
     "mcp[cli]>=1.0.0",
+    "langchain>=1.2.14",
 ]
 
 [project.optional-dependencies]
@@ -59,3 +60,9 @@ exclude = [".venv", "__pycache__", "exercise3_rasa"]
 [tool.ruff.lint]
 # E = pycodestyle errors  F = pyflakes  I = isort
 select = ["E", "F", "I"]
+
+[dependency-groups]
+dev = [
+    "pip-system-certs>=5.3",
+    "pre-commit>=4.5.1",
+]

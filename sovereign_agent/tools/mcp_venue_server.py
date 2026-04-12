@@ -21,6 +21,7 @@ To inspect it in isolation:
 """
 
 import json
+
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("EdinburghVenueServer")
@@ -35,7 +36,7 @@ VENUES = {
     "The Albanach": {
         "capacity": 180,
         "vegan": True,
-        "status": "available",
+        "status": "full",
         "address": "2 Hunter Square, Edinburgh",
     },
     "The Haymarket Vaults": {
@@ -87,11 +88,13 @@ def get_venue_details(pub_name: str) -> str:
     """
     venue = VENUES.get(pub_name)
     if not venue:
-        return json.dumps({
-            "success": False,
-            "error": f"Venue not found: '{pub_name}'",
-            "known_venues": list(VENUES.keys()),
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "error": f"Venue not found: '{pub_name}'",
+                "known_venues": list(VENUES.keys()),
+            }
+        )
     return json.dumps({"success": True, "name": pub_name, **venue})
 
 

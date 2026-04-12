@@ -39,3 +39,8 @@ packages = ["actions"]
 line-length = 88
 target-version = "py310"
 exclude = [".venv", ".rasa", "models", "__pycache__"]
+
+[dependency-groups]
+dev = [
+    "pip-system-certs>=5.3",
+]

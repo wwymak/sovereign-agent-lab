@@ -1,0 +1,46 @@
+indent-width = 4
+target-version = "py313"
+format.indent-style = "space"
+format.quote-style = "double"
+lint.extend-per-file-ignores = {"tests/*" = ["ANN201", "ANN202", "D", "INP001", "A002", "ARG001", "ARG002", "ARG005"], "src/scripts/generate_spec.py" = ["INP001"], "src/agent_eval/core/protocols.py" = ["A002"], "src/agent_eval/evaluators/*" = ["A002", "ARG002"], "src/agent_eval/simulation/*" = ["ARG002"], "src/agent_eval/runners/base.py" = ["ARG002"], "examples/*" = ["ANN201", "ANN202", "D", "INP001", "A002", "ARG001", "ARG002", "ARG005"]}
+lint.fixable = ["ALL"]
+lint.ignore = [
+    "E501",
+  "COM812",  # missing-trailing-comma, why: compatibility between linter and formater
+  "COM819",  # prohibited-trailing-comma, why: compatibility between linter and formater
+  "E111",  # indentation-with-invalid-multiple, why: compatibility between linter and formater
+  "E114",  # indentation-with-invalid-multiple-comment, why: compatibility between linter and formater
+  "E117",  # over-indented, why: compatibility between linter and formater
+  "ISC001",  # single-line-implicit-string-concatenation, why: compatibility between linter and formater
+  "ISC002"  # multi-line-implicit-string-concatenation, why: compatibility between linter and formater
+]
+lint.select = [
+  "A",  # flake8-builtins
+  "ANN201",  # flake8-annotations public function
+  "ANN202",  # flake8-annotations private function
+  "ANN205",  # flake8-annotations static method
+  "ANN206",  # flake8-annotations class method
+  "ARG",  # flake8-unused-arguments
+  "B",  # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "COM",  # flake8-commas
+  "D201",  # no-blank-line-before-function
+  "D204",  # one-blank-line-after-class
+  "D207",  # under-indentation
+  "D209",  # new-line-after-last-paragraph
+  "D214",  # section-not-over-indented
+  "D300",  # triple-single-quotes
+  "D301",  # escape-sequence-in-docstring
+  "D419",  # empty-docstring
+  "E",  # pycodestyle errors
+  "EM",  # flake8-errmsg
+  "F",  # pyflakes
+  "I",  # isort
+  "ISC",  # explicit-string-concatenation
+  "LOG",  # flake8-logging
+  "RET",  # flake8-return
+  "UP",  # pyupgrade
+  "W"  # pycodestyle warnings
+]
+lint.isort.split-on-trailing-comma = true  # replacing isort multi_line_output = 3
+lint.pydocstyle.convention = "pep257"

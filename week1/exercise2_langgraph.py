@@ -65,6 +65,7 @@ OUTPUTS_DIR.mkdir(exist_ok=True)
 
 # ─── Display helper ───────────────────────────────────────────────────────────
 
+
 def print_result(result: dict, label: str) -> None:
     """Print a research_agent result dict in a readable format."""
     print(f"\n{'=' * 65}")
@@ -78,8 +79,8 @@ def print_result(result: dict, label: str) -> None:
             print(f"  [TOOL_CALL] → {entry['tool']}({args_str})")
         else:
             content = entry.get("content", "")
-            if len(content) > 500:
-                content = content[:500] + "..."
+            # if len(content) > 500:
+            #     content = content[:500] + "..."
             if content:
                 print(f"  [{role}]\n  {content}\n")
 
@@ -95,6 +96,7 @@ def print_result(result: dict, label: str) -> None:
 # Notice: we do NOT tell the agent in which order to do these things.
 # The order emerges from the model's reasoning about what information it needs.
 # That is what makes it an agent rather than a script.
+
 
 def task_a() -> dict:
     print("\n--- Task A: Main Edinburgh Brief ---")
@@ -113,7 +115,9 @@ def task_a() -> dict:
     print_result(result, "TASK A — Main Edinburgh Brief")
 
     if not result["tool_calls_made"]:
-        print("  ⚠️  No tool calls were made. Check that sovereign_agent/ is importable.")
+        print(
+            "  ⚠️  No tool calls were made. Check that sovereign_agent/ is importable."
+        )
     else:
         print(f"\n  Summary: {len(result['tool_calls_made'])} tool call(s) made")
         for tc in result["tool_calls_made"]:
@@ -133,6 +137,7 @@ def task_a() -> dict:
 #   Open sovereign_agent/tools/venue_tools.py
 #   Find the generate_event_flyer function
 #   Follow the TODO comment — replace the stub with a real images.generate() call
+
 
 def task_b() -> dict:
     print("\n--- Task B: Flyer Tool ---")
@@ -170,6 +175,7 @@ def task_b() -> dict:
 # Scenario 3: Completely out of scope
 #   There is no tool for train times. The agent should handle this cleanly.
 #   Question: Did it try to call a tool anyway? Did it make something up?
+
 
 def task_c() -> list:
     results = []
@@ -214,14 +220,19 @@ def task_c() -> list:
 # Compare what you see there with the Mermaid graph.
 # They both describe "what the agent can do" — but very differently.
 
+
 def task_d() -> str:
-    from langchain_openai import ChatOpenAI
-    from langgraph.prebuilt import create_react_agent
-    from sovereign_agent.tools.venue_tools import (
-        check_pub_availability, get_edinburgh_weather,
-        calculate_catering_cost, generate_event_flyer,
-    )
     import os
+
+    from langchain.agents import create_agent
+    from langchain_openai import ChatOpenAI
+
+    from sovereign_agent.tools.venue_tools import (
+        calculate_catering_cost,
+        check_pub_availability,
+        generate_event_flyer,
+        get_edinburgh_weather,
+    )
 
     llm = ChatOpenAI(
         base_url="https://api.tokenfactory.nebius.com/v1/",
@@ -229,10 +240,15 @@ def task_d() -> str:
         model="meta-llama/Llama-3.3-70B-Instruct",
         temperature=0,
     )
-    agent = create_react_agent(llm, [
-        check_pub_availability, get_edinburgh_weather,
-        calculate_catering_cost, generate_event_flyer,
-    ])
+    agent = create_agent(
+        llm,
+        [
+            check_pub_availability,
+            get_edinburgh_weather,
+            calculate_catering_cost,
+            generate_event_flyer,
+        ],
+    )
 
     print(f"\n{'=' * 65}")
     print("  TASK D — Agent Graph Structure (Mermaid)")
@@ -245,12 +261,17 @@ def task_d() -> str:
     print("  Both files describe the agent's behaviour — compare them.")
     print()
     print("  LangGraph: one loop node, model decides the path at runtime")
-    print("  Rasa CALM: flows.yml — every task described explicitly, LLM picks the flow")
-    print("  Record your comparison in week1/answers/ex2_answers.py → TASK_D_COMPARISON")
+    print(
+        "  Rasa CALM: flows.yml — every task described explicitly, LLM picks the flow"
+    )
+    print(
+        "  Record your comparison in week1/answers/ex2_answers.py → TASK_D_COMPARISON"
+    )
     return mermaid
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
+
 
 def main(which: str = "all") -> None:
     output = {}
@@ -281,3 +302,4 @@ if __name__ == "__main__":
         print(f"Unknown task '{which}'. Options: {sorted(valid)}")
         sys.exit(1)
     main(which)
+    # task_a()
