@@ -15,10 +15,27 @@ Usage:
 A ✅ means the check passed.
 A ❌ means something is wrong — fix it before submitting.
 A ⚠️  means something looks unusual but may still be acceptable.
+
+────────────────────────────────────────────────────────────────────────────
+FIXES APPLIED 2026-04-09
+  - Exercise 2 flyer-tool check now uses `venue_name=` (not `pub_name=`).
+  - Exercise 2 module imports are now defensive — a missing optional
+    dependency no longer blocks grading unrelated exercises.
+  - Exercise 2 no longer fails flyer tool when it returns the graceful
+    placeholder fallback (the fallback is a valid implementation, not a stub).
+  - Exercise 3 no longer false-flags the word "FormValidationAction" when
+    it appears only in a comment block; we check for actual class usage.
+  - Exercise 4 WEEK_5_ARCHITECTURE is now a WARNING instead of a FAIL
+    if it has fewer bullets — it is a speculation question based on
+    PROGRESS.md, not a test of material you have seen in class yet.
+────────────────────────────────────────────────────────────────────────────
 """
+
+from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -32,10 +49,10 @@ PASS = "✅"
 FAIL = "❌"
 WARN = "⚠️ "
 
-_results = []
+_results: list[tuple[str | None, str]] = []
 
 
-def record(status: str, msg: str) -> None:
+def record(status: str | None, msg: str) -> None:
     _results.append((status, msg))
 
 
@@ -60,6 +77,21 @@ def load_answers(name: str) -> ModuleType | None:
     except Exception as e:
         record(FAIL, f"Could not import {name}.py: {e}")
         return None
+
+
+def _safe_exec_module(path: Path, label: str) -> tuple[ModuleType | None, str | None]:
+    """Import a module file and return (module, error_message_or_None)."""
+    if not path.exists():
+        return None, f"{label} not found at {path}"
+    spec = importlib.util.spec_from_file_location(f"_grade_{label}", path)
+    mod = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mod)
+        return mod, None
+    except ModuleNotFoundError as e:
+        return None, f"missing dependency ({e.name}) — run `make install`"
+    except Exception as e:
+        return None, f"{type(e).__name__}: {e}"
 
 
 def is_filled(v) -> bool:
@@ -122,7 +154,6 @@ def check_ex1() -> None:
         val = getattr(a, var, None)
         record(PASS if val is not None else FAIL, f"{var} set to True or False")
 
-    # Check Part A answers are consistent with JSON
     for cond in ["PLAIN", "XML", "SANDWICH"]:
         ans = getattr(a, f"PART_A_{cond}_CORRECT", None)
         jsn = out.get("part_a", {}).get(cond, {}).get("correct")
@@ -162,48 +193,63 @@ def check_ex2() -> None:
         else "outputs/ex2_results.json missing or invalid — run exercise2_langgraph.py",
     )
 
-    # Check that sovereign_agent modules import cleanly
-    for module_path, import_name in [
+    # Defensive module import — a missing optional dep no longer nukes grading.
+    for module_path, label in [
         (ROOT / "sovereign_agent" / "tools" / "venue_tools.py", "venue_tools"),
         (ROOT / "sovereign_agent" / "agents" / "research_agent.py", "research_agent"),
     ]:
-        if module_path.exists():
-            spec = importlib.util.spec_from_file_location(import_name, module_path)
-            mod = importlib.util.module_from_spec(spec)
-            try:
-                spec.loader.exec_module(mod)
-                record(
-                    PASS, f"sovereign_agent/{module_path.name} imports without error"
-                )
-            except Exception as e:
-                record(FAIL, f"sovereign_agent/{module_path.name} import error: {e}")
+        mod, err = _safe_exec_module(module_path, label)
+        if mod is not None:
+            record(PASS, f"sovereign_agent/{label}.py imports without error")
         else:
-            record(
-                FAIL,
-                f"sovereign_agent/{module_path.parent.name}/{module_path.name} not found",
-            )
+            # Dependency errors are a WARN not FAIL — they block this check
+            # but the student may still have a valid implementation.
+            if "missing dependency" in (err or ""):
+                record(WARN, f"sovereign_agent/{label}.py: {err}")
+            else:
+                record(FAIL, f"sovereign_agent/{label}.py import error: {err}")
 
-    # Check generate_event_flyer is not still a stub
+    # Check generate_event_flyer is not still the literal stub.
     vt_path = ROOT / "sovereign_agent" / "tools" / "venue_tools.py"
-    if vt_path.exists():
-        spec = importlib.util.spec_from_file_location("venue_tools_check", vt_path)
-        mod = importlib.util.module_from_spec(spec)
-        try:
-            spec.loader.exec_module(mod)
-            fn = getattr(mod, "generate_event_flyer", None)
-            if fn:
+    vt_mod, _ = _safe_exec_module(vt_path, "venue_tools_check")
+    if vt_mod is not None:
+        fn = getattr(vt_mod, "generate_event_flyer", None)
+        if fn:
+            try:
                 raw_fn = fn.func if hasattr(fn, "func") else fn
-                raw = raw_fn(venue_name="Test", guest_count=10, event_theme="test")
+                # The parameter is `venue_name`, not `pub_name` — this was a
+                # bug in the earlier grader.
+                raw = raw_fn(
+                    venue_name="The Haymarket Vaults",
+                    guest_count=10,
+                    event_theme="test",
+                )
                 parsed = json.loads(raw) if isinstance(raw, str) else raw
-                is_stub = "STUB" in str(parsed.get("error", ""))
+
+                # A valid implementation returns success=True, regardless of
+                # whether it used a live provider or the placeholder fallback.
+                # The OLD stub returned success=False with "STUB" in the error.
+                is_stub = (
+                    parsed.get("success") is False
+                    and "STUB" in str(parsed.get("error", "")).upper()
+                )
+                has_url = bool(parsed.get("image_url"))
                 record(
                     FAIL if is_stub else PASS,
                     "generate_event_flyer is implemented (not stub)"
                     if not is_stub
-                    else "generate_event_flyer still returns stub — implement the TODO in venue_tools.py",
+                    else "generate_event_flyer still returns stub — see venue_tools.py",
                 )
-        except Exception as e:
-            record(WARN, f"Could not call generate_event_flyer directly: {e}")
+                if not is_stub and not has_url:
+                    record(WARN, "generate_event_flyer returned no image_url")
+            except TypeError as e:
+                record(
+                    FAIL,
+                    f"generate_event_flyer signature mismatch: {e} "
+                    "(expected venue_name, guest_count, event_theme)",
+                )
+            except Exception as e:
+                record(WARN, f"Could not call generate_event_flyer directly: {e}")
 
     a = load_answers("ex2_answers")
     if not a:
@@ -212,7 +258,8 @@ def check_ex2() -> None:
     tools = getattr(a, "TASK_A_TOOLS_CALLED", [])
     record(
         PASS if isinstance(tools, list) and len(tools) >= 2 else FAIL,
-        f"TASK_A_TOOLS_CALLED has ≥ 2 entries (found {len(tools) if isinstance(tools, list) else 0})",
+        f"TASK_A_TOOLS_CALLED has ≥ 2 entries "
+        f"(found {len(tools) if isinstance(tools, list) else 0})",
     )
 
     venue = getattr(a, "TASK_A_CONFIRMED_VENUE", "FILL_ME_IN")
@@ -258,10 +305,20 @@ def check_ex2() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+# Strip out Python comments and triple-quoted docstrings so we don't match
+# reference text like "in old Rasa you had a FormValidationAction".
+def _strip_comments_and_docstrings(source: str) -> str:
+    # Remove triple-quoted strings (docstrings / multi-line comments-as-strings)
+    source = re.sub(r'"""[\s\S]*?"""', "", source)
+    source = re.sub(r"'''[\s\S]*?'''", "", source)
+    # Remove single-line # comments
+    lines = [re.sub(r"(?<!['\"])#.*$", "", ln) for ln in source.splitlines()]
+    return "\n".join(lines)
+
+
 def check_ex3() -> None:
     record(None, "── Exercise 3 ──────────────────────────────────────────")
 
-    # Check CALM required files exist
     for fname, label in [
         ("exercise3_rasa/config.yml", "config.yml"),
         ("exercise3_rasa/domain.yml", "domain.yml"),
@@ -279,10 +336,12 @@ def check_ex3() -> None:
     actions_path = ROOT / "exercise3_rasa" / "actions" / "actions.py"
     if actions_path.exists():
         source = actions_path.read_text()
+        code_only = _strip_comments_and_docstrings(source)
+
+        # Cutoff guard: at least one un-commented `now = datetime.datetime.now()`
+        # AND a `now.hour` reference in code (not in a docstring or comment).
         guard_present = (
-            "datetime.datetime.now()" in source
-            and "now.hour" in source
-            and "# now = datetime" not in source.split("now.hour")[0].split("\n")[-1]
+            "datetime.datetime.now()" in code_only and "now.hour" in code_only
         )
         record(
             PASS if guard_present else FAIL,
@@ -290,13 +349,19 @@ def check_ex3() -> None:
             if guard_present
             else "Cutoff guard still commented out — uncomment the TASK B block in actions.py",
         )
-        # CALM: no FormValidationAction needed
-        has_form_action = "class FormValidationAction" in source
+
+        # CALM: no FormValidationAction needed. Only flag if the word appears
+        # in ACTUAL CODE (class definition or instantiation), not in the
+        # explanatory comment block at the top of the file.
+        has_form_action_in_code = bool(
+            re.search(r"\bclass\s+FormValidationAction\b", code_only)
+            or re.search(r"\bFormValidationAction\s*\(", code_only)
+        )
         record(
-            PASS if not has_form_action else WARN,
-            "No FormValidationAction (correct — CALM handles slot extraction via LLM)"
-            if not has_form_action
-            else "FormValidationAction found — not needed in CALM (from_llm slots handle extraction)",
+            PASS if not has_form_action_in_code else WARN,
+            "No FormValidationAction class in code (correct — CALM handles slot extraction)"
+            if not has_form_action_in_code
+            else "FormValidationAction used in code — not needed in CALM",
         )
     else:
         record(FAIL, "exercise3_rasa/actions/actions.py not found")
@@ -339,20 +404,53 @@ def check_ex3() -> None:
     files = getattr(a, "TASK_B_FILES_CHANGED", [])
     record(
         PASS if isinstance(files, list) and len(files) >= 1 else FAIL,
-        f"TASK_B_FILES_CHANGED lists at least 1 file (found {len(files) if isinstance(files, list) else 0})",
+        f"TASK_B_FILES_CHANGED lists at least 1 file "
+        f"(found {len(files) if isinstance(files, list) else 0})",
     )
 
     for var, min_w in [
         ("OUT_OF_SCOPE_COMPARISON", 40),
         ("SETUP_COST_VALUE", 40),
         ("TASK_B_HOW_YOU_TESTED", 20),
-        ("CALM_VS_OLD_RASA", 30),
     ]:
         val = getattr(a, var, "")
         wc = word_count(val)
         record(
             PASS if is_filled(val) and wc >= min_w else FAIL,
             f"{var} filled in and ≥ {min_w} words (found {wc})",
+        )
+
+    # CALM_VS_OLD_RASA is now a WARN instead of FAIL.
+    #
+    # Rationale (2026-04-13, addressing anonymous cohort feedback):
+    # This field asks students to compare Rasa Pro CALM to "old Rasa"
+    # (the pre-CALM open-source 3.x release line). Students in this cohort
+    # were never taught old Rasa and have no reason to know it. Asking a
+    # 30-word comparison as a FAIL-blocking check punishes people for not
+    # having done prior work outside the course. A student who leaves it
+    # blank is not demonstrating incompetence — they are demonstrating that
+    # they read only the material they were assigned.
+    #
+    # We keep the prompt in ex3_answers.py for anyone who does know old Rasa
+    # and wants to answer (it's a reasonable reflection for context), but
+    # we downgrade the check so that a blank or short answer cannot block
+    # submission. This mirrors how we already handle WEEK_5_ARCHITECTURE.
+    calm = getattr(a, "CALM_VS_OLD_RASA", "")
+    calm_wc = word_count(calm)
+    if is_filled(calm) and calm_wc >= 30:
+        record(PASS, f"CALM_VS_OLD_RASA filled in and ≥ 30 words (found {calm_wc})")
+    elif is_filled(calm):
+        record(
+            WARN,
+            f"CALM_VS_OLD_RASA has {calm_wc} words — aim for 30 if you know old Rasa, "
+            f"otherwise leave as-is (not blocking)",
+        )
+    else:
+        record(
+            WARN,
+            "CALM_VS_OLD_RASA not filled in — optional, not blocking. "
+            "This question assumes familiarity with pre-CALM Rasa which "
+            "was not part of the course material.",
         )
 
 
@@ -385,7 +483,8 @@ def check_ex4() -> None:
     tools = getattr(a, "TOOLS_DISCOVERED", [])
     record(
         PASS if isinstance(tools, list) and len(tools) >= 2 else FAIL,
-        f"TOOLS_DISCOVERED has ≥ 2 entries (found {len(tools) if isinstance(tools, list) else 0})",
+        f"TOOLS_DISCOVERED has ≥ 2 entries "
+        f"(found {len(tools) if isinstance(tools, list) else 0})",
     )
 
     json_tools = out.get("tools_discovered", []) if out else []
@@ -419,14 +518,26 @@ def check_ex4() -> None:
             f"{var} filled in and ≥ {min_w} words (found {wc})",
         )
 
+    # WEEK_5_ARCHITECTURE is now a WARN instead of FAIL when short.
+    # It is speculative — based on PROGRESS.md, not on material students
+    # have covered in class yet. A short answer should still prompt the
+    # student to revisit it, but should not block submission.
     arch = getattr(a, "WEEK_5_ARCHITECTURE", "")
     bullet_count = sum(
         1 for line in str(arch).splitlines() if line.strip().startswith("-")
     )
-    record(
-        PASS if is_filled(arch) and bullet_count >= 5 else FAIL,
-        f"WEEK_5_ARCHITECTURE has ≥ 5 bullet points (found {bullet_count})",
-    )
+    if is_filled(arch) and bullet_count >= 5:
+        record(
+            PASS, f"WEEK_5_ARCHITECTURE has ≥ 5 bullet points (found {bullet_count})"
+        )
+    elif is_filled(arch) and bullet_count >= 3:
+        record(
+            WARN,
+            f"WEEK_5_ARCHITECTURE has {bullet_count} bullets — aim for 5, "
+            f"see PROGRESS.md for the five-week arc",
+        )
+    else:
+        record(FAIL, "WEEK_5_ARCHITECTURE not filled in — see PROGRESS.md")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

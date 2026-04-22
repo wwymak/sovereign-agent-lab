@@ -40,9 +40,6 @@ TASK_A_NOTES = (
     "https://pictures-storage.storage.eu-north1.nebius.cloud/text2img-4ce8728b-942d-4e1d-95ca-20cf2b78166a_00001_.webp"
     "it is actually much better than the flyer I tried to generate with the manual prompt below(!)"
 )  # optional — anything unexpected
-
-# ── Task B ─────────────────────────────────────────────────────────────────
-
 # Has generate_event_flyer been implemented (not just the stub)?
 TASK_B_IMPLEMENTED = True  # True or False
 
@@ -162,7 +159,7 @@ graph TD;
 	classDef last fill:#bfb6fc
 """
 
-# Compare the LangGraph graph to exercise3_rasa/data/rules.yml. Min 30 words.
+# Compare the LangGraph graph to exercise3_rasa/data/flows.yml. Min 30 words.
 TASK_D_COMPARISON = """
 The LangGraph graph has only one loop node with tools. We allow the model
 to pick what tool to call at every loop and when it decide to end. We also

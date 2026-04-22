@@ -13,30 +13,36 @@ LLM connection). Your job is to:
   Task A: Run it and observe the trace — which tools were called, in what order,
           and what decisions the model made between them.
 
-  Task B: Implement generate_event_flyer in sovereign_agent/tools/venue_tools.py.
-          The function stub is there with a TODO comment. Until you implement it,
-          the tool returns an error. Once you implement it, Task B re-runs the
-          main brief and generates a real flyer URL.
+  Task B: Run the flyer tool and observe its graceful-fallback pattern.
+          The original version of this task asked you to implement a direct
+          FLUX image call, but FLUX was removed from Nebius on 2026-04-13.
+          The scaffold now ships with a working fallback implementation —
+          see sovereign_agent/tools/venue_tools.py. Your job is to run it
+          and record which path your run took (live or placeholder) in
+          ex2_answers.py.
 
   Task C: Run three deliberate failure scenarios and observe how the agent handles
           each one. This is the most important part — how an agent handles the
           unexpected is what separates a prototype from something reliable.
 
   Task D: View the agent's internal graph structure and compare it to
-          exercise3_rasa/data/rules.yml.
+          exercise3_rasa/data/flows.yml.
 
-WHY THIS MATTERS FOR YOUR SOVEREIGN AGENT
-------------------------------------------
-research_agent.py is the core of your sovereign agent.
-Every week you extend it — real web search in Week 2, planning in Week 3, memory
-in Week 4. The trace structure you observe today (Think → Tool Call → Observe →
-Repeat) is the same structure it will use when it's booking venues autonomously.
+WHY THIS MATTERS FOR PYNANOCLAW
+--------------------------------
+research_agent.py is the autonomous-loop half of PyNanoClaw, the hybrid
+system the final assignment will have you build. You extend it in the
+Week 2 session (real web search + file operations) and again in the final
+assignment (planner upstream, memory alongside, handoff bridge to the
+Rasa half, observability). The trace structure you observe today
+(Think → Tool Call → Observe → Repeat) is the same structure it will use
+when PyNanoClaw is booking venues autonomously.
 
 HOW TO RUN
 -----------
     python week1/exercise2_langgraph.py             # all tasks
     python week1/exercise2_langgraph.py task_a      # main brief
-    python week1/exercise2_langgraph.py task_b      # 4th tool demo
+    python week1/exercise2_langgraph.py task_b      # flyer tool observation
     python week1/exercise2_langgraph.py task_c      # failure modes
     python week1/exercise2_langgraph.py task_d      # graph structure
 
@@ -45,13 +51,14 @@ Then fill in week1/answers/ex2_answers.py.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 # ── Import from the persistent sovereign_agent project ────────────────────────
-# This is the import pattern you'll use in Weeks 2-5 as well.
+# This is the import pattern you'll use in later weeks as well.
 # The agent lives in sovereign_agent/ — the exercises just call it.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -61,7 +68,6 @@ load_dotenv()
 
 OUTPUTS_DIR = Path(__file__).parent / "outputs"
 OUTPUTS_DIR.mkdir(exist_ok=True)
-
 
 # ─── Display helper ───────────────────────────────────────────────────────────
 
@@ -76,7 +82,12 @@ def print_result(result: dict, label: str) -> None:
         role = entry["role"].upper()
         if role == "TOOL_CALL":
             args_str = json.dumps(entry.get("args", {}))[:80]
-            print(f"  [TOOL_CALL] → {entry['tool']}({args_str})")
+            print(f"  [TOOL_CALL]    → {entry['tool']}({args_str})")
+        elif role == "TOOL_RESULT":
+            content = entry.get("content", "")
+            if len(content) > 400:
+                content = content[:400] + "..."
+            print(f"  [TOOL_RESULT]  ← {entry.get('tool', '')}: {content}")
         else:
             content = entry.get("content", "")
             # if len(content) > 500:
@@ -91,7 +102,7 @@ def print_result(result: dict, label: str) -> None:
 #   1. Check at least two venues (The Albanach and The Haymarket Vaults)
 #   2. Check the Edinburgh weather
 #   3. Calculate catering cost for the confirmed venue
-#   4. Attempt to generate a flyer (returns stub error until Task B is complete)
+#   4. Generate a flyer for the confirmed venue
 #
 # Notice: we do NOT tell the agent in which order to do these things.
 # The order emerges from the model's reasoning about what information it needs.
@@ -115,9 +126,8 @@ def task_a() -> dict:
     print_result(result, "TASK A — Main Edinburgh Brief")
 
     if not result["tool_calls_made"]:
-        print(
-            "  ⚠️  No tool calls were made. Check that sovereign_agent/ is importable."
-        )
+        print("  ⚠️  No tool calls were made. This was a known bug with the old")
+        print("     Llama model — pull the latest main (see CHANGELOG.md §Fixed).")
     else:
         print(f"\n  Summary: {len(result['tool_calls_made'])} tool call(s) made")
         for tc in result["tool_calls_made"]:
@@ -127,22 +137,32 @@ def task_a() -> dict:
     return result
 
 
-# ─── Task B — 4th tool implementation ─────────────────────────────────────────
+# ─── Task B — flyer tool observation ──────────────────────────────────────────
 #
-# Until you implement generate_event_flyer in sovereign_agent/tools/venue_tools.py,
-# this task will show an error in the tool result.
-# Once implemented, it should return a real image URL.
+# The flyer tool now ships with a working graceful-fallback implementation.
+# See sovereign_agent/tools/venue_tools.py → generate_event_flyer.
 #
-# TO IMPLEMENT:
-#   Open sovereign_agent/tools/venue_tools.py
-#   Find the generate_event_flyer function
-#   Follow the TODO comment — replace the stub with a real images.generate() call
+# It takes one of two paths:
+#   (a) Live mode: if FLYER_IMAGE_MODEL is set in .env, it calls that model
+#       and returns a real image URL.
+#   (b) Placeholder mode: otherwise (or on any provider failure) it returns
+#       a deterministic placehold.co URL with mode="placeholder".
+#
+# Both paths return success=True. Both are valid. Your job is to run the tool
+# and record which path your run took in ex2_answers.py → TASK_B_MODE.
+#
+# This is a lesson in what "implementing a tool well" actually means in
+# production: graceful degradation. A tool that raises on provider failure
+# takes the entire ReAct loop down with it. A tool that returns a structured,
+# labelled fallback keeps the agent's control flow intact.
 
 
 def task_b() -> dict:
     print("\n--- Task B: Flyer Tool ---")
-    print("  If generate_event_flyer is still a stub, you'll see 'STUB' in the output.")
-    print("  Implement the TODO in sovereign_agent/tools/venue_tools.py first.\n")
+    print("  The flyer tool runs either a live image call (if FLYER_IMAGE_MODEL")
+    print("  is set in .env) or a deterministic placeholder fallback. Both paths")
+    print("  return success=True. Look for the 'mode' field in the tool result")
+    print("  and record it in ex2_answers.py → TASK_B_MODE.\n")
 
     result = run_research_agent(
         task=(
@@ -216,16 +236,19 @@ def task_c() -> list:
 # LangGraph exports a visual representation of the agent's internal structure.
 # The output is Mermaid markdown — paste it into https://mermaid.live
 #
-# THEN: open exercise3_rasa/data/rules.yml in your editor.
+# THEN: open exercise3_rasa/data/flows.yml in your editor.
 # Compare what you see there with the Mermaid graph.
 # They both describe "what the agent can do" — but very differently.
+#
+# Note: Task D builds its own agent purely to draw the graph. The graph
+# structure doesn't depend on which model you use, but we still honour the
+# RESEARCH_MODEL env var so your `make ex2-d` output is consistent with
+# `make ex2-a` if you've pinned a non-default model.
 
 
 def task_d() -> str:
-    import os
-
-    from langchain.agents import create_agent
     from langchain_openai import ChatOpenAI
+    from langgraph.prebuilt import create_react_agent
 
     from sovereign_agent.tools.venue_tools import (
         calculate_catering_cost,
@@ -237,10 +260,10 @@ def task_d() -> str:
     llm = ChatOpenAI(
         base_url="https://api.tokenfactory.nebius.com/v1/",
         api_key=os.getenv("NEBIUS_KEY"),
-        model="meta-llama/Llama-3.3-70B-Instruct",
+        model=os.getenv("RESEARCH_MODEL", "Qwen/Qwen3-32B"),
         temperature=0,
     )
-    agent = create_agent(
+    agent = create_react_agent(
         llm,
         [
             check_pub_availability,
@@ -302,4 +325,3 @@ if __name__ == "__main__":
         print(f"Unknown task '{which}'. Options: {sorted(valid)}")
         sys.exit(1)
     main(which)
-    # task_a()
